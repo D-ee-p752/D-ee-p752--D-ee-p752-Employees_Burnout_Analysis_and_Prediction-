@@ -1,0 +1,122 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
+data = pd.read_excel("C:/Users/DEEPIKA/OneDrive/Desktop/employee_burnout_analysis-AI 2 (2).xlsx")
+data
+data.head()
+data.tail()
+data.dtypes
+data.shape
+data.info()
+data.describe()
+data.isnull()
+data.columns.tolist()
+data.nunique()
+data.isnull().sum()
+data = data.dropna()
+data = data.drop('Employee ID' ,axis =1)
+
+print(f"Min date {data['Date of Joining'].min()}")
+print(f"Max date {data['Date of Joining'].max()}")
+data_month = data.copy()
+data_month["Date of Joining"] = data_month["Date of Joining"].astype("datetime64[ns]")
+data_month["Date of Joining"].groupby(data_month['Date of Joining'].dt.month).count().plot(kind="bar",xlabel='Month',ylabel= "Hired employees")
+
+data_2008 = pd.to_datetime(["2008-01-01"]*len(data))
+data["Days"] = data['Date of Joining'].astype("datetime64[ns]").sub(data_2008).dt.days
+data.Days
+
+data.corr(numeric_only=True)['Burn Rate'][:]
+cat_columns = data.select_dtypes(object).columns
+fig, ax = plt.subplots(nrows=1,ncols=len(cat_columns),sharey=True,figsize=(10,5))
+for i, c in enumerate(cat_columns):
+    sns.countplot(x=c, data=data,ax=ax[i])
+plt.show()
+
+
+if all (col in data.columns for col in['Company Type','WFH Setup Available','Gender']):
+    data = pd.get_dummies(data,columns=['Company Type','WFH Setup Available', 'Gender'],drop_first=True)
+    data.head()
+    encoded_columns = data.columns
+else:
+    print("Error:One or more of the specified columns are not present in thr DataFrame.")
+    print(data.columns)
+
+y = data['Burn Rate']
+x = data.drop('Burn Rate',axis =1)
+
+# Train-test split
+x_train,x_test,y_train,y_test = train_test_split(x,y, train_size = 0.7,shuffle = True,random_state=1)
+#Scale
+scaler = StandardScaler()
+scaler.fit(x_train)
+x_train = pd.DataFrame(scaler.transform(x_train),index=x_train.index,columns=x_train.columns)
+x_test = pd.DataFrame(scaler.transform(x_test),index=x_test.index,columns=x_test.columns)
+
+
+x_train
+y_train
+
+#From sklearn.linear_model import LinearRegression
+#Create an insance of the LinearRegression class
+linear_regression_model =LinearRegression()
+# Train the model
+linear_regression_model.fit(x_train,y_train)
+
+#Linear Regression Model Preformance Metrics
+
+print("Linear Regression Model Preformance Metrics:\n")
+# Make predictions on the test set 
+y_pred = linear_regression_model.predict(x_test)
+#Calculate mean squared error
+mse = mean_squared_error(y_test,y_pred)
+print("Mean Squares Error:",mse)
+
+#Calculate root mean Square error 
+rmse = mean_squared_error(y_test,y_pred,squared=False)
+print("Root Mean Squared Error :", rmse)
+
+#Calculate mean absolute error
+mae = mean_absolute_error(y_test,y_pred)
+print("Mean Absolute Error:", mae)
+
+#Calculate R-Square score 
+r2 = r2_score(y_test,y_pred)
+print("R-squared Score :",r2)
+
+from sklearn.neighbors import KNeighborsRegressor
+
+
+
+# Create and train the KNN regressor
+knn_regressor = KNeighborsRegressor(n_neighbors=5)
+knn_regressor.fit(x_train, y_train)
+
+
+y_predKnn = knn_regressor.predict(x_test)
+
+
+print("Linear Regression Model Preformance Metrics:\n")
+#Calculate mean squared error
+
+mse = mean_squared_error(y_test,y_predKnn)
+print("Mean Squared Error:",mse)
+
+#Calcluate root mean squared error
+rmse = mean_squared_error(y_test,y_predKnn,squared = False)
+print("Root Mean Square Error:",rmse)
+
+#Calculate mean absolute error
+mae = mean_absolute_error(y_test,y_predKnn)
+print("Mean Absolute Error:",mae)
+
+#Calculate R-squared Score 
+r2 = r2_score(y_test,y_predKnn)
+print("R-squared Score:", r2)
+
+
+
